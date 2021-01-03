@@ -1,0 +1,8 @@
+---
+certificates_dir: "{{ role_path }}/vars"
+ssl_certs_path: /etc/nginx/ssl/certs
+ssl_private_path: /etc/nginx/ssl/private
+#Production
+letsencrypt_endpoint: 'https://acme-v02.api.letsencrypt.org/directory'
+#Staging
+#letsencrypt_endpoint: 'https://acme-staging-v02.api.letsencrypt.org/directory'

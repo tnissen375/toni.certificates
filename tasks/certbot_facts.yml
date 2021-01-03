@@ -1,0 +1,28 @@
+---
+- name: Register certbot certificate file
+  when: existing_certs|bool==false
+  stat:
+    path: "/etc/letsencrypt/live/{{ certbot_server }}/fullchain.pem"
+  register: certbot_certificate_file_path
+
+- name: Certbot certificates
+  when: not existing_certs|bool and not certbot_certificate_file_path.stat.exists 
+  include_role:
+    name: certificates
+    tasks_from: certbot
+  vars:
+    letsencrypt_domainname: "{{ certbot_server }}"
+  #   letsencrypt_email: "{{ letsencrypt_email }}"
+
+- name: Register certbot certificate file after creation
+  when: existing_certs|bool==false and not certbot_certificate_file_path.stat.exists
+  stat:
+    path: "/etc/letsencrypt/live/{{ certbot_server }}/fullchain.pem"
+  register: certbot_certificate_file_path_new
+
+- name: Set certificate path
+  when: not existing_certs|bool
+  set_fact:
+    container_cert_path: "/etc/letsencrypt/live/{{ certbot_server }}/fullchain.pem"
+    container_key_path: "/etc/letsencrypt/live/{{ certbot_server }}/privkey.pem"
+    certbot_cert_exists: "{{ certbot_certificate_file_path.stat.exists or certbot_certificate_file_path_new.stat.exists }}"

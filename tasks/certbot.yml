@@ -1,0 +1,53 @@
+---
+# - name: Add certbot apt repo
+#   apt_repository:
+#     repo: ppa:certbot/certbot
+#     state: present
+
+- name: Install certbot 
+  apt:
+    name:
+      - certbot
+#      - python3-certbot-nginx
+    state: latest
+
+- name: Make sure nginx uses latest configs
+  meta: flush_handlers
+
+- name: Ensure Let's Encrypt uses API v2
+  lineinfile:
+    path: /etc/letsencrypt/cli.ini
+    regexp: "^server"
+    line: "server = {{ letsencrypt_endpoint }}"
+    
+- name: Ensure folder for letsencrypt exists
+  file:
+    name: /var/www/letsencrypt/.well-known/acme-challenge
+    state: directory
+
+- name: Publish html test file
+  copy:
+    content: |
+          Yeah - got access!
+    mode: 0755
+    dest: /var/www/letsencrypt/.well-known/acme-challenge/access
+
+- name: "Wait until server is accessible"
+  when: not certbot_certificate_file_path.stat.exists
+  uri:
+    url: "https://{{ certbot_server }}/.well-known/acme-challenge/access"
+    status_code: 200
+    validate_certs: no
+  register: result
+  until: result.status == 200
+  retries: 30
+  delay: 5
+
+- name: Remove folder
+  file:
+    state: absent
+    path: "/var/www/letsencrypt/.well-known"
+
+- name: Generate Certificates
+  command: certbot certonly -d {{ letsencrypt_domainname }} --agree-tos --email {{ letsencrypt_email }} -n --webroot -w "/var/www/letsencrypt"
+  when: not certbot_certificate_file_path.stat.exists

@@ -1,0 +1,9 @@
+---
+- name: Set certificates deployment paths as fact.
+  set_fact:
+    "{{ item|regex_replace('[^a-zA-Z0-9_]', '_') + '_key_path' }}": "{{ ssl_private_path + '/' + item + '.key' }}"
+    "{{ item|regex_replace('[^a-zA-Z0-9_]', '_') + '_cert_path' }}": "{{ ssl_certs_path + '/' + item + '.crt' }}"
+    "{{ item|regex_replace('[^a-zA-Z0-9_]', '_') + '_chcrt_path' }}": "{{ ssl_certs_path + '/' + item + '.chcrt' }}"
+    "{{ item|regex_replace('[^a-zA-Z0-9_]', '_') + '_pem_path' }}": "{{ ssl_certs_path + '/' + item + '.pem' }}"
+  with_items: "{{ certificates }}"
+  

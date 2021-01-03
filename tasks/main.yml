@@ -1,0 +1,61 @@
+---
+- name: Include certificates from vault files.
+  include_vars:
+    file: "{{ certificates_dir }}/{{ item }}.yml"
+    name: "{{ item }}"
+  with_items: "{{ certificates }}"
+
+- name: Ensure ca-certificates is installed.
+  package:
+    state: present
+    name: ca-certificates
+
+- name: Ensure certs and private directory exists.
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ ssl_certs_path }}"
+    - "{{ ssl_private_path }}"
+
+- name: Deploy private keys.
+  copy:
+    content: "{{ hostvars[inventory_hostname][item]['privkey'] }}"
+    dest: "{{ ssl_private_path + '/' + item + '.key' }}"
+    owner: root
+    group: root
+    mode: "0600"
+  with_items: "{{ certificates }}"
+
+- name: Deploy public keys.
+  copy:
+    content: "{{ hostvars[inventory_hostname][item]['cert'] }}"
+    dest: "{{ ssl_certs_path + '/' + item + '.crt' }}"
+    owner: root
+    group: root
+    mode: "0644"
+  with_items: "{{ certificates }}"
+
+- name: Deploy chain.
+  when: "'chain' in hostvars[inventory_hostname][item]"
+  copy:
+    content: "{{ hostvars[inventory_hostname][item]['chain'] }}"
+    dest: "{{ ssl_certs_path + '/' + item + '.chcrt' }}"
+    owner: root
+    group: root
+    mode: "0644"
+  with_items: "{{ certificates }}"
+
+- name: Deploy concatenated certificate.
+  copy:
+    content: "{{ hostvars[inventory_hostname][item]['cert']
+                 + '\n'
+                 + hostvars[inventory_hostname][item]['chain']|default('') }}"
+    dest: "{{ ssl_certs_path + '/' + item + '.pem' }}"
+    owner: root
+    group: root
+    mode: "0644"
+  with_items: "{{ certificates }}"
+
+- name: Set Facts
+  include_tasks: facts.yml
