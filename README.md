@@ -1,7 +1,7 @@
 toni.certificates
 ============
 
-Ansible role to create SSl-Certificates with Certbot.
+Ansible role to create SSL-certificates with certbot.
 
 TODO: Description and playbook example.
 
