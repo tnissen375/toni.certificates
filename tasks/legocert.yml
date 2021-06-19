@@ -1,0 +1,23 @@
+---
+- name: create certificate
+  shell: 
+    cmd: docker run --mount type=bind,source="/{{ user }}/certs/",target="/.lego" --env HETZNER_API_KEY={{ lego_api_token }} --env HETZNER_TTL=700 goacme/lego -email {{ lego_mail }} -a --dns {{ lego_dns_provider }} --domains={{ lego_domains }} run
+    executable: /bin/bash
+  become: yes
+  become_user: "{{ user }}"
+  register: out_create
+  when: lego_mode == "create"
+# echo $(cat test | grep "Server responded with a certificate")
+
+
+- name: renew certificate
+  shell: 
+    cmd: docker run --mount type=bind,source="/{{ user }}/certs/",target="/.lego" --env HETZNER_API_KEY={{ lego_api_token }} --env HETZNER_TTL=700 goacme/lego -email {{ lego_mail }} -a --dns {{ lego_dns_provider }} --domains={{ lego_domains }} renew --days {{ lego_renew_days }}
+    executable: /bin/bash
+  become: yes
+  register: out_renew
+  become_user: "{{ user }}"
+  when: lego_mode == "renew"
+
+- debug: var=out_create.stdout
+#  run_once: true

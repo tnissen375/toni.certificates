@@ -1,4 +1,17 @@
 ---
+- name: check subdomain dns
+  when: not existing_certs|bool and (ipv4 or ipv6) and record_dns_create
+  include_role:
+    name: toni.dns
+    tasks_from: main
+  vars:
+    zone: "{{ nginx_domain }}"
+    record_name: "{{ certbot_server.split('.')[0] | lower }}"
+    record_type: "{{ record_type_dns }}"
+    record_value: "{{ ansible_ssh_host }}"
+    record_update: "{{ record_dns_update }}"
+    record_create: "{{ record_dns_create }}"
+
 - name: Register certbot certificate file
   when: existing_certs|bool==false
   stat:
