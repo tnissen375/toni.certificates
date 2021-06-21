@@ -4,6 +4,21 @@
 #     repo: ppa:certbot/certbot
 #     state: present
 
+#Make sure new created subdomains (manual or toni.dns) are picked up
+- name: Flush local DNS cache
+  shell: 
+    cmd: systemd-resolve --flush-caches
+    executable: /bin/bash
+  become: yes
+  register: flushed
+  become_user: "{{ user }}"
+
+- name: restart systemd-resolved service
+  systemd:
+    name: systemd-resolved
+    enabled: yes
+    state: restarted
+
 - name: Install certbot 
   apt:
     name:
