@@ -4,7 +4,8 @@
 #     repo: ppa:certbot/certbot
 #     state: present
 
-#Make sure new created subdomains (manual or toni.dns) are picked up
+#Make sure new created subdomains (manual or toni.dns) are picked up // necessary if a subdomain ip differs from domain ip
+#Not sure if that resolves anything // todo: update etc/hosts
 - name: Flush local DNS cache
   shell: 
     cmd: systemd-resolve --flush-caches
