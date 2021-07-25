@@ -2,7 +2,7 @@
 #- debug: var=nginx_domain
 
 - name: check subdomain dns 
-  when: not existing_certs|bool and (ipv4 or ipv6) and record_dns_create
+  when: (ipv4 or ipv6) and record_dns_create
   include_role:
     name: toni.dns
     tasks_from: main

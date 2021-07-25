@@ -1,21 +1,28 @@
 ---
+user: "root"
+user_path: "/root"
 certificates_dir: "{{ role_path }}/vars"
 ssl_certs_path: /etc/nginx/ssl/certs
 ssl_private_path: /etc/nginx/ssl/private
+deploy: true
 #Production
 letsencrypt_endpoint: 'https://acme-v02.api.letsencrypt.org/directory'
+#Staging
+#letsencrypt_endpoint: 'https://acme-staging-v02.api.letsencrypt.org/directory'
+
 ipv4: "{{ ansible_ssh_host | ipv4 }}"
 ipv6: "{{ ansible_ssh_host | ipv6 }}"
 record_name_dns: ""
 record_type_dns: "{{ 'A' if ipv4 else 'AAAA' }}"
 record_dns_update: false
 record_dns_create: false
-#Staging
-#letsencrypt_endpoint: 'https://acme-staging-v02.api.letsencrypt.org/directory'
+
 
 lego_mail: "jidumailer@gmail.com"
-lego_domains: "yd2m.com *.yd2m.com"
 lego_renew_days: 30
 lego_mode: "create"
 lego_dns_provider: "hetzner"
 lego_api_token: ""
+
+dir_exists:
+  - "{{ user_path }}/certs"

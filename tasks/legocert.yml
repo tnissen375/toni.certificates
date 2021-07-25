@@ -1,23 +1,59 @@
 ---
+# - debug: var=lego_api_token
+#   run_once: true
+
+- name: Checking {{ domain }}"
+  stat:
+    path: "{{ user_path }}/certs/certificates/{{ domain }}.crt"
+  register: stat_results
+  delegate_to: localhost
+
+# - debug: var=ansible_date_time.epoch|int
+#   run_once: true
+
 - name: create certificate
   shell: 
-    cmd: docker run --mount type=bind,source="/{{ user }}/certs/",target="/.lego" --env HETZNER_API_KEY={{ lego_api_token }} --env HETZNER_TTL=700 goacme/lego -email {{ lego_mail }} -a --dns {{ lego_dns_provider }} --domains={{ lego_domains }} run
+    cmd: docker run --mount type=bind,source="/{{ user }}/certs/",target="/.lego" --env HETZNER_API_KEY={{ lego_api_token }} --env HETZNER_TTL=700 goacme/lego -email {{ lego_mail }} -a --dns {{ lego_dns_provider }} --domains={{ domain }} --domains=*.{{ domain }} run
     executable: /bin/bash
   become: yes
   become_user: "{{ user }}"
   register: out_create
-  when: lego_mode == "create"
+  when: not stat_results.stat.exists
+  delegate_to: localhost
+  #lego_mode == "create"
 # echo $(cat test | grep "Server responded with a certificate")
-
 
 - name: renew certificate
   shell: 
-    cmd: docker run --mount type=bind,source="/{{ user }}/certs/",target="/.lego" --env HETZNER_API_KEY={{ lego_api_token }} --env HETZNER_TTL=700 goacme/lego -email {{ lego_mail }} -a --dns {{ lego_dns_provider }} --domains={{ lego_domains }} renew --days {{ lego_renew_days }}
+    cmd: docker run --mount type=bind,source="/{{ user }}/certs/",target="/.lego" --env HETZNER_API_KEY={{ lego_api_token }} --env HETZNER_TTL=700 goacme/lego -email {{ lego_mail }} -a --dns {{ lego_dns_provider }} --domains={{ domain }} --domains=*.{{ domain }} renew --days {{ lego_renew_days }}
     executable: /bin/bash
   become: yes
   register: out_renew
   become_user: "{{ user }}"
-  when: lego_mode == "renew"
+  when: stat_results.stat.exists
+  delegate_to: localhost
 
-- debug: var=out_create.stdout
+- file:
+    state: directory
+    path: "{{ item }}"
+    recurse: yes
+  loop:
+    - "{{ ssl_certs_path }}"
+    - "{{ ssl_private_path }}"
+
+- name: Copy cert 
+  copy:
+    src: "{{ user_path }}/certs/certificates/{{ domain }}.crt"
+    dest: "{{ ssl_certs_path }}/{{ domain }}.crt"
+  when: (deploy is defined and deploy|bool==true) or ((ansible_date_time.epoch|int - stat_results.stat.mtime) > (lego_renew_days * 60 * 60 * 24))
+
+- name: Copy key 
+  copy:
+    src: "{{ user_path }}/certs/certificates/{{ domain }}.key"
+    dest: "{{ ssl_private_path }}/{{ domain }}.key"
+  when: deploy is defined and deploy|bool==true or ((ansible_date_time.epoch|int - stat_results.stat.mtime) > (lego_renew_days * 60 * 60 * 24))
+
+#   when: lego_mode == "renew" and ((ansible_date_time.epoch|int - stat_results.stat.mtime) > (lego_renew_days * 60 * 60 * 24))
+
+# - debug: var=out_create.stdout
 #  run_once: true

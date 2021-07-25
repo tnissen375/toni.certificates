@@ -1,0 +1,14 @@
+---
+- file:
+    state: directory
+    path: "{{ item }}"
+    recurse: yes
+  loop:
+    "{{ dir_exists }}"
+  delegate_to: localhost    
+    
+- name: Create wildcard certificates
+  include_tasks: legocert.yml
+#  vars:
+#    domain: "{{ item.domain }}"
+#  loop: "{{ lego_wildcards }}"
