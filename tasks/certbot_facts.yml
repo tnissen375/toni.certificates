@@ -1,6 +1,10 @@
 ---
 #- debug: var=nginx_domain
 
+- debug: var=record_dns_create
+- debug: var=record_dns_update
+
+#when: (ipv4 or ipv6) and record_dns_create == "true"
 - name: check subdomain dns 
   when: (ipv4 or ipv6) and (record_dns_create == "true" or record_dns_update == "true")
   include_role:

@@ -25,4 +25,4 @@ lego_dns_provider: "hetzner"
 lego_api_token: ""
 
 dir_exists:
-  - "{{ user_path }}/certs"
+  - "{{ user_path }}/certs"   
