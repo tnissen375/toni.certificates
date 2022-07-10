@@ -1,9 +1,4 @@
 ---
-# - name: Add certbot apt repo
-#   apt_repository:
-#     repo: ppa:certbot/certbot
-#     state: present
-
 #Make sure new created subdomains (manual or toni.dns) are picked up // necessary if a subdomain ip differs from domain ip
 #Not sure if that resolves anything // todo: update etc/hosts
 - name: Flush local DNS cache
@@ -20,15 +15,46 @@
     enabled: yes
     state: restarted
 
-- name: Install certbot 
+## Snap recommended by certbot
+- name: Remove Certbot PPA
+  apt_repository:
+    repo: "ppa:certbot/certbot"
+    state: absent
+
+- name: Remove certbot apt packages
   apt:
     name:
       - certbot
-#      - python3-certbot-nginx
+      - python-certbot-apache
+      - python3-certbot-apache
+      - python-certbot-nginx
+      - python3-certbot-nginx
+    state: absent
+    purge: yes
+
+- name: Install snapd
+  apt:
+    name:
+      - snapd
     state: latest
+
+- name: Install certbot snap with option --classic
+  community.general.snap:
+    name: certbot
+    classic: yes    
 
 - name: Make sure nginx uses latest configs
   meta: flush_handlers
+
+- file:
+    state: directory
+    path: "/etc/letsencrypt/"
+    recurse: yes
+
+- name: touch
+  file:
+    path: /etc/letsencrypt/cli.ini
+    state: touch
 
 - name: Ensure Let's Encrypt uses API v2
   lineinfile:
@@ -47,6 +73,10 @@
           Yeah - got access!
     mode: 0755
     dest: /var/www/letsencrypt/.well-known/acme-challenge/access
+
+# - name: Debug var
+#   debug:
+#     var: certbot_server
 
 - name: "Wait until server is accessible"
   when: not certbot_certificate_file_path.stat.exists
